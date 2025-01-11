@@ -5,8 +5,6 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
-    networks:
-      - bot-network
     depends_on:
       - redis
   redis:
