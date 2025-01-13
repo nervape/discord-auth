@@ -19,15 +19,17 @@ load_dotenv()
 TOKEN_EXPIRY = int(os.getenv('TOKEN_EXPIRY'))  # Token expiry in seconds
 BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 PROXY_URL = os.getenv('PROXY_URL')
-TARGET_URL = os.getenv('TARGET_URL')
+CKB_TARGET_URL = os.getenv('CKB_TARGET_URL')
+BTC_TARGET_URL = os.getenv('BTC_TARGET_URL')
 VERIFIED_ROLE_ID = int(os.getenv('VERIFIED_ROLE_ID'))
 CHECK_INTERVAL = int(os.getenv('CHECK_INTERVAL'))  # Check interval in second
 REDIRECT_URI = os.getenv('REDIRECT_URI')
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_KEY_PREFIX = os.getenv('REDIS_KEY_PREFIX')
 CKB_ROLE_ID = int(os.getenv('CKB_ROLE_ID'))
+BTC_ROLE_ID = int(os.getenv('BTC_ROLE_ID'))
 TARGET_GUILD_ID = int(os.getenv('TARGET_GUILD_ID'))
-TARGET_CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+TARGET_CHANNEL_ID = int(os.getenv('TARGET_CHANNEL_ID'))
 
 # Redis connection
 redis_client = redis.Redis(host=REDIS_HOST, port=6379, db=0)
@@ -56,7 +58,7 @@ class VerifyButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Verify Your Status", style=discord.ButtonStyle.grey)
+    @discord.ui.button(label="Verify Your Nervape Holder Role", style=discord.ButtonStyle.grey)
     async def verify_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = interaction.user.id.real
         token = secrets.token_urlsafe(16)
@@ -84,7 +86,7 @@ class VerifyButton(discord.ui.View):
         status = redis_client.get(f"{REDIS_KEY_PREFIX}:discord:user:{user_id}")
         if status and status.decode('utf-8') != "verified":
             redis_client.delete(f"{REDIS_KEY_PREFIX}:discord:user:{user_id}")
-            await update_message(interaction, "Verification failed, please retry", VerifyButton())
+            await update_message(interaction, "Verification unsuccessful. Please double check your information and restart the verification process again.", VerifyButton())
             return
         else:
             redis_client.set(f"{REDIS_KEY_PREFIX}:discord:user:{user_id}:verified", 1)
@@ -94,8 +96,8 @@ class VerifyButton(discord.ui.View):
             await update_message(interaction, "Verification failed, please retry", VerifyButton())
         else:
             await update_message(interaction,
-                                 f"Verification successful! Your CKB address is `{ckb_address.decode('utf-8')}` "
-                                 f"and your BTC address is `{btc_address.decode('utf-8')}`")
+                                 f"Verification successful! This is to confirm that your CKB address is `{ckb_address.decode('utf-8')}` "
+                                 f"and your BTC address is `{btc_address.decode('utf-8')}`.\n------\nIf the above is incorrect, please double check your information and restart the verification process immediately.")
 
 
 class VerificationBot(commands.Bot):
@@ -137,59 +139,86 @@ class VerificationBot(commands.Bot):
     @tasks.loop(count=1)
     async def send_initial_message(self):
         channel = self.get_channel(TARGET_CHANNEL_ID)
-        await channel.send("Welcome to the Nervape Community! Click the button below to start holder role verification:", view=VerifyButton(), silent=True)
-
+        await channel.send("Thanks for being a Nervape Holder!\nWe use this verification bot to safely verify that you are a Nervape Holder and can receive the CKB Nervape Holder Role in Discord. To get started, click the button below.\n\nBy verifying, you are agreeing to the Terms of Use and Privacy Policy of this verification process.", view=VerifyButton(), silent=True)
 
     @tasks.loop(seconds=CHECK_INTERVAL)
-    async def check_addresses(self):
+    async def check_ckb_addresses(self):
         """Check verified addresses against API"""
         while not self.is_closed():
             try:
+                # 1. get from redis
                 verified_users = redis_client.keys(f"{REDIS_KEY_PREFIX}:discord:user:*:verified")
                 print(f"Checking {len(verified_users)} verified users...")
                 for user_key in verified_users:
-                    # remove prefix and decode
-                    user_key = user_key.decode('utf-8')[len(REDIS_KEY_PREFIX)+1:]
-                    user_id = user_key.split(':')[2]
-                    user_address_key = f"{REDIS_KEY_PREFIX}:discord:user:{user_id}:address:ckb"
-                    address = redis_client.get(user_address_key)
-
-                    if address is None:
-                        print(f"user {user_id} does not have a valid ckb address!!!")
-                        # take over user's role if have
-                        guild = self.get_guild(TARGET_GUILD_ID)
-                        member = await guild.fetch_member(int(user_id))
-                        role = guild.get_role(CKB_ROLE_ID)
-                        if role and role in member.roles:
-                            print(f"User {user_id} is no longer a holder, removing role")
-                            await member.remove_roles(role)
+                    if not await self.verify_btc_user(user_key):  # False is the Flag for skip iteration
                         continue
-                    address = address.decode("utf-8")
 
-                    # Query API
-                    async with self.session.get(f"{TARGET_URL}/{address}") as response:
-                        print(f"Checking address {address} for user {user_id}")
-                        if response.status == 200:
-                            data = await response.json()
-                            isHolder = data.get('isHolder', False)
-
-                            # Give role to user
-                            guild = self.get_guild(TARGET_GUILD_ID)
-                            member = await guild.fetch_member(int(user_id))
-                            role = guild.get_role(CKB_ROLE_ID)
-                            if not role:
-                                continue
-                            if isHolder and role not in member.roles:
-                                print(f"User {user_id} is a new verified holder, adding role")
-                                await member.add_roles(role)
-                            elif not isHolder and role in member.roles:
-                                print(f"User {user_id} is no longer a holder, removing role")
-                                await member.remove_roles(role)
-
+                    if not await self.verify_ckb_user(user_key):  # False is the Flag for skip iteration
+                        continue
+                # 2. get from role members
+                guild = self.get_guild(TARGET_GUILD_ID)
+                role = guild.get_role(VERIFIED_ROLE_ID)
+                if role:
+                    members = role.members
+                    print(f"Checking {len(members)} role members...")
+                    for member in members:
+                        if member.id.real in verified_users: # skip if already checked
+                            continue
+                        user_key = f"{REDIS_KEY_PREFIX}:discord:user:{member.id}"
+                        if await self.verify_btc_user(user_key):
+                            continue
+                        if await self.verify_ckb_user(user_key):
+                            continue
 
             except Exception as e:
                 print(f"Error in address check: {e}")
             await asyncio.sleep(CHECK_INTERVAL)
+
+    async def verify_ckb_user(self, user_key):
+        return await self.verify_user(user_key, CKB_TARGET_URL, CKB_ROLE_ID, term="ckb")
+
+    async def verify_btc_user(self, user_key):
+        return await self.verify_user(user_key, BTC_TARGET_URL, BTC_ROLE_ID, term="btc")
+
+    async def verify_user(self, user_key, target_url, role_id, term="ckb"):
+        # remove prefix and decode
+        user_key = user_key.decode('utf-8')[len(REDIS_KEY_PREFIX) + 1:]
+        user_id = user_key.split(':')[2]
+        user_address_key = f"{REDIS_KEY_PREFIX}:discord:user:{user_id}:address:{term}"
+        address = redis_client.get(user_address_key)
+
+        if address is None:
+            print(f"user {user_id} does not have a valid {term} address!!!")
+            # take over user's role if have
+            guild = self.get_guild(TARGET_GUILD_ID)
+            member = await guild.fetch_member(int(user_id))
+            role = guild.get_role(role_id)
+            if role and role in member.roles:
+                print(f"User {user_id} is no longer a holder, removing role")
+                await member.remove_roles(role)
+            return False
+        address = address.decode("utf-8")
+
+        # Query API
+        async with self.session.get(f"{target_url}/{address}") as response:
+            print(f"Checking address {address} for user {user_id}")
+            if response.status == 200:
+                data = await response.json()
+                is_holder = data.get('isHolder', False)
+
+                # Give role to user
+                guild = self.get_guild(TARGET_GUILD_ID)
+                member = await guild.fetch_member(int(user_id))
+                role = guild.get_role(role_id)
+                if not role:
+                    return False
+                if is_holder and role not in member.roles:
+                    print(f"User {user_id} is a new verified holder, adding role")
+                    await member.add_roles(role)
+                elif not is_holder and role in member.roles:
+                    print(f"User {user_id} is no longer a holder, removing role")
+                    await member.remove_roles(role)
+        return True
 
     async def set_verified(self, user_id: int, address: str):
         """Helper function to set user as verified"""
@@ -209,7 +238,7 @@ def run_bot():
         if PROXY_URL:
             print(f"Using proxy: {PROXY_URL}")
         print("------")
-        bot.check_addresses.start()
+        bot.check_ckb_addresses.start()
         bot.send_initial_message.start()
 
     @bot.tree.command(name="verify", description="Start the verification process")
