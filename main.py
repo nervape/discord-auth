@@ -142,7 +142,17 @@ class VerificationBot(commands.Bot):
         embed = discord.Embed(title="Thanks for being a Nervape Holder!", description="We use this verification bot to safely verify that you are a Nervape Holder and can receive the Nervape Holder Role in Discord. To get started, click the button below.\n\nBy verifying, you are agreeing to the Terms of Use and Privacy Policy of this verification process.")
         embed.set_footer(text="Made by Nervape Studio with ❤️")
         embed.set_author(name="Nervape Studio", icon_url="https://cdn.discordapp.com/icons/942680148212350996/84da741b575d3ac42a5bea3a67b57614.png")
-        await channel.send(embed=embed, view=VerifyButton(), silent=True)
+        res = await channel.send(embed=embed, view=VerifyButton(), silent=True)
+        last_initial_message = redis_client.get(f"{REDIS_KEY_PREFIX}:discord:last_initial_message")
+        if last_initial_message:
+            last_initial_message = int(last_initial_message)
+            try:
+                message = await channel.fetch_message(last_initial_message)
+                await message.delete()
+            except discord.NotFound:
+                logging.info(f"Initial message {last_initial_message} not found")
+                pass
+        redis_client.set("f{REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
     @tasks.loop(seconds=CHECK_INTERVAL)
     async def check_ckb_addresses(self):
