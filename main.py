@@ -170,7 +170,7 @@ class VerificationBot(commands.Bot):
 
                         await self.verify_ckb_user(user_key)  # False is the Flag for skip iteration
                     except Exception as e:
-                        print(f"Error in address check for user {user_key}: {e}")
+                        print(f"Error in address check for user {verified_users}: {e}")
                         continue
 
                 # 2. get from role members
