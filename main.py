@@ -141,7 +141,7 @@ class VerificationBot(commands.Bot):
         channel = self.get_channel(TARGET_CHANNEL_ID)
         embed = discord.Embed(title="Thanks for being a Nervape Holder!", description="We use this verification bot to safely verify that you are a Nervape Holder and can receive the CKB Nervape Holder Role in Discord. To get started, click the button below.\n\nBy verifying, you are agreeing to the Terms of Use and Privacy Policy of this verification process.")
         embed.set_footer(text="Made by Nervape Studio with ❤️")
-        embed.set_author(name="Nervape Studio", icon_url="https://www.nervape.com/assets/logo_nervape-3f492c1f.svg")
+        embed.set_author(name="Nervape Studio", icon_url="https://cdn.discordapp.com/icons/942680148212350996/84da741b575d3ac42a5bea3a67b57614.png")
         await channel.send(embed=embed, view=VerifyButton(), silent=True)
 
     @tasks.loop(seconds=CHECK_INTERVAL)
