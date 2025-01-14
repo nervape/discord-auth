@@ -105,6 +105,7 @@ class VerificationBot(commands.Bot):
         intents = discord.Intents.all()
         intents.message_content = True
         intents.guilds = True  # Required for role management
+        intents.members = True  # Required for role management
         intents.reactions = True  # Required for button interactions
 
         self.proxy = PROXY_URL if PROXY_URL else None
