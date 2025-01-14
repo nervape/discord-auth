@@ -164,10 +164,14 @@ class VerificationBot(commands.Bot):
                 verified_users = redis_client.keys(f"{REDIS_KEY_PREFIX}:discord:user:*:verified")
                 print(f"Checking {len(verified_users)} verified users...")
                 for user_key in verified_users:
-                    if not await self.verify_btc_user(user_key):  # False is the Flag for skip iteration
-                        continue
+                    try:
+                        if not await self.verify_btc_user(user_key):  # False is the Flag for skip iteration
+                            continue
 
-                    await self.verify_ckb_user(user_key)  # False is the Flag for skip iteration
+                        await self.verify_ckb_user(user_key)  # False is the Flag for skip iteration
+                    except Exception as e:
+                        print(f"Error in address check for user {user_key}: {e}")
+                        continue
 
                 # 2. get from role members
                 guild = self.get_guild(TARGET_GUILD_ID)
@@ -176,12 +180,16 @@ class VerificationBot(commands.Bot):
                     members = role.members
                     print(f"Checking {len(members)} role members...")
                     for member in members:
-                        if member.id.real in verified_users:  # skip if already checked
-                            continue
-                        user_key = f"{REDIS_KEY_PREFIX}:discord:user:{member.id}"
-                        if not await self.verify_btc_user(user_key):
-                            continue
-                        if not await self.verify_ckb_user(user_key):
+                        try:
+                            if member.id.real in verified_users:  # skip if already checked
+                                continue
+                            user_key = f"{REDIS_KEY_PREFIX}:discord:user:{member.id}"
+                            if not await self.verify_btc_user(user_key):
+                                continue
+                            if not await self.verify_ckb_user(user_key):
+                                continue
+                        except Exception as e:
+                            print(f"Error in address check for user {member}: {e}")
                             continue
 
             except Exception as e:
