@@ -156,8 +156,8 @@ class VerificationBot(commands.Bot):
                     if not await self.verify_btc_user(user_key):  # False is the Flag for skip iteration
                         continue
 
-                    if not await self.verify_ckb_user(user_key):  # False is the Flag for skip iteration
-                        continue
+                    await self.verify_ckb_user(user_key)  # False is the Flag for skip iteration
+
                 # 2. get from role members
                 guild = self.get_guild(TARGET_GUILD_ID)
                 role = guild.get_role(VERIFIED_ROLE_ID)
@@ -165,12 +165,12 @@ class VerificationBot(commands.Bot):
                     members = role.members
                     print(f"Checking {len(members)} role members...")
                     for member in members:
-                        if member.id.real in verified_users: # skip if already checked
+                        if member.id.real in verified_users:  # skip if already checked
                             continue
                         user_key = f"{REDIS_KEY_PREFIX}:discord:user:{member.id}"
-                        if await self.verify_btc_user(user_key):
+                        if not await self.verify_btc_user(user_key):
                             continue
-                        if await self.verify_ckb_user(user_key):
+                        if not await self.verify_ckb_user(user_key):
                             continue
 
             except Exception as e:
