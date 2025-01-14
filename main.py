@@ -152,7 +152,7 @@ class VerificationBot(commands.Bot):
             except discord.NotFound:
                 logging.info(f"Initial message {last_initial_message} not found")
                 pass
-        redis_client.set("f{REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
+        redis_client.set(f"{REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
     @tasks.loop(seconds=CHECK_INTERVAL)
     async def check_ckb_addresses(self):
