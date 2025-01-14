@@ -102,8 +102,9 @@ class VerifyButton(discord.ui.View):
 
 class VerificationBot(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.all()
+        intents = discord.Intents.default()
         intents.message_content = True
+        intents.messages = True
         intents.guilds = True  # Required for role management
         intents.members = True  # Required for role management
         intents.reactions = True  # Required for button interactions
