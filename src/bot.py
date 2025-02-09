@@ -106,6 +106,12 @@ class VerificationBot(commands.Bot):
                     for key in verified_users
                 )
                 
+
+                guild = self.get_guild(Config.TARGET_GUILD_ID)
+                if not guild:
+                    logger.error("Guild not found, skipping role member check")
+                    continue
+                
                 # Process each verified user
                 for user_key in verified_users:
                     logger.info(f"Processing user {user_key}")
@@ -118,10 +124,6 @@ class VerificationBot(commands.Bot):
                         continue
 
                 # 2. Check role members
-                guild = self.get_guild(Config.TARGET_GUILD_ID)
-                if not guild:
-                    logger.error("Guild not found, skipping role member check")
-                    continue
                     
                 role = guild.get_role(Config.VERIFIED_ROLE_ID)
                 if role:
