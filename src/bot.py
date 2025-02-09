@@ -58,10 +58,18 @@ class VerificationBot(commands.Bot):
     @tasks.loop(count=1)
     async def send_initial_message(self):
         channel = self.get_channel(Config.TARGET_CHANNEL_ID)
-        embed = discord.Embed(title="Thanks for being a Nervape Holder!", description="We use this verification bot to safely verify that you are a Nervape Holder and can receive the Nervape Holder Role in Discord. To get started, click the button below.\n\nBy verifying, you are agreeing to the Terms of Use and Privacy Policy of this verification process.")
-        embed.set_footer(text="Made by Nervape Studio with ❤️")
-        embed.set_author(name="Nervape Studio", icon_url="https://cdn.discordapp.com/icons/942680148212350996/84da741b575d3ac42a5bea3a67b57614.png")
+        embed = discord.Embed(
+            title=Config.MESSAGE_TITLE,
+            description=Config.MESSAGE_DESCRIPTION
+        )
+        embed.set_footer(text=Config.MESSAGE_FOOTER)
+        embed.set_author(
+            name=Config.MESSAGE_AUTHOR_NAME,
+            icon_url=Config.MESSAGE_AUTHOR_ICON
+        )
         res = await channel.send(embed=embed, view=VerifyButton(), silent=True)
+        
+        # Handle previous message cleanup
         last_initial_message = self.redis.get(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message")
         if last_initial_message:
             last_initial_message = int(last_initial_message)

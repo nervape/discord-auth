@@ -31,3 +31,18 @@ class Config:
     # Redis configuration
     REDIS_HOST = os.getenv('REDIS_HOST', 'redis')              # Redis server hostname/IP
     REDIS_KEY_PREFIX = os.getenv('REDIS_KEY_PREFIX', 'nervape')  # Namespace prefix for Redis keys
+
+    # Message Configuration
+    MESSAGE_TITLE = os.getenv('MESSAGE_TITLE', 'Thanks for being a Nervape Holder!')
+    MESSAGE_DESCRIPTION = os.getenv(
+        'MESSAGE_DESCRIPTION',
+        'We use this verification bot to safely verify that you are a Nervape Holder and can receive '
+        'the Nervape Holder Role in Discord. To get started, click the button below.\n\n'
+        'By verifying, you are agreeing to the Terms of Use and Privacy Policy of this verification process.'
+    )
+    MESSAGE_FOOTER = os.getenv('MESSAGE_FOOTER', 'Made by Nervape Studio with ❤️')
+    MESSAGE_AUTHOR_NAME = os.getenv('MESSAGE_AUTHOR_NAME', 'Nervape Studio')
+    MESSAGE_AUTHOR_ICON = os.getenv(
+        'MESSAGE_AUTHOR_ICON',
+        'https://cdn.discordapp.com/icons/942680148212350996/84da741b575d3ac42a5bea3a67b57614.png'
+    )
