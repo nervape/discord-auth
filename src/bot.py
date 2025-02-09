@@ -30,9 +30,8 @@ class VerificationBot(commands.Bot):
 
     async def get_guild_member(self, user_id: int):
         """Safe method to get guild member"""
-        if not self.guild:
-            self.guild = self.get_guild(Config.TARGET_GUILD_ID)
-        if not self.guild:
+        guild = self.get_guild(Config.TARGET_GUILD_ID)
+        if guild is None:
             print(f"Could not find guild with ID {Config.TARGET_GUILD_ID}")
         try:
             return await self.guild.fetch_member(user_id)
