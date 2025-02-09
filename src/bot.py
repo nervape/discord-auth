@@ -44,7 +44,7 @@ class VerificationBot(commands.Bot):
         """Safe method to get guild member"""
         if not self.guild:
             print(f"guild is None, please check your configuration")
-            return None
+            self.guild = self.get_guild(Config.TARGET_GUILD_ID)
         try:
             return await self.guild.fetch_member(user_id)
         except discord.NotFound:
