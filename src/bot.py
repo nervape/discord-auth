@@ -76,6 +76,7 @@ class VerificationBot(commands.Bot):
                 print(f"Checking {len(verified_users)} verified users...")
                 
                 for user_id in verified_users:
+                    print(f"Checking user {user_id}")
                     member = await self.get_guild_member(int(user_id))
                     if not member:
                         print(f"Could not find member with ID {user_id}, skipping...")

@@ -48,11 +48,11 @@ class BaseRoleManager(ABC):
 
     async def update_role(self, user_id: int):
         """Update user's role based on holder status"""
+        guild = self.bot.get_guild(Config.TARGET_GUILD_ID)
         member = await self.bot.get_guild_member(int(user_id))
         if not member:
+            print(f"Could not find member with ID {user_id}, skipping...")
             return
-        
-        guild = self.bot.get_guild(Config.TARGET_GUILD_ID)
 
         role = guild.get_role(self.role_id)
         if not role:
