@@ -133,7 +133,6 @@ class VerificationBot(commands.Bot):
 
             except Exception as e:
                 logger.error(f"Error in address check: {e}")
-            await asyncio.sleep(Config.CHECK_INTERVAL)
 
     async def close(self):
         if self.session:
