@@ -103,6 +103,7 @@ class VerificationBot(commands.Bot):
                 
                 # Process each verified user
                 for user_key in verified_users:
+                    logger.info(f"Processing user {user_key}")
                     try:
                         await self.verify_all_roles(user_key)
                     except Exception as e:
@@ -122,6 +123,7 @@ class VerificationBot(commands.Bot):
                     for member in members:
                         try:
                             # Skip if already checked in verified users
+                            logger.info(f"Checking role member {member.id}")
                             if any(str(member.id).encode() in key for key in verified_users):
                                 continue
                                 
