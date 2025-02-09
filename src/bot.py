@@ -78,6 +78,7 @@ class VerificationBot(commands.Bot):
                 for user_id in verified_users:
                     member = await self.get_guild_member(int(user_id))
                     if not member:
+                        print(f"Could not find member with ID {user_id}, skipping...")
                         continue
                         
                     for manager in self.role_managers:
