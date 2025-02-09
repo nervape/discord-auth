@@ -19,8 +19,6 @@ class VerificationBot(commands.Bot):
         self.session = None
         self.redis = RedisManager()
         self.role_managers = []
-        self.guild = None  # Store guild reference
-        self._ready = asyncio.Event()  # Add ready event
 
     async def setup_hook(self):
         await self.tree.sync()
@@ -37,7 +35,6 @@ class VerificationBot(commands.Bot):
             return
         
         print(f"Connected to guild: {self.guild.name}")
-        self._ready.set()  # Signal that bot is ready
         
         # Start background tasks after we're ready
         self.check_addresses.start()
