@@ -15,8 +15,8 @@ def main():
     @bot.event
     async def on_ready():
         logger.info(f"Bot logged in as {bot.user}")
-        await bot.send_initial_message.start()
-        await bot.check_addresses.start()
+        bot.send_initial_message.start()
+        bot.check_addresses.start()
 
     @bot.tree.command(name="verify", description="Start the verification process")
     async def verify_command(interaction):

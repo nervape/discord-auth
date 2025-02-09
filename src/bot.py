@@ -28,18 +28,6 @@ class VerificationBot(commands.Bot):
             NervapeBTCManager(self, self.redis)
         ]
 
-    async def on_ready(self):
-        self.guild = self.get_guild(Config.TARGET_GUILD_ID)
-        if not self.guild:
-            print(f"Could not find guild with ID {Config.TARGET_GUILD_ID}")
-            return
-        
-        print(f"Connected to guild: {self.guild.name}")
-        
-        # Start background tasks after we're ready
-        self.check_addresses.start()
-        self.send_initial_message.start()
-
     async def get_guild_member(self, user_id: int):
         """Safe method to get guild member"""
         if not self.guild:
@@ -70,7 +58,7 @@ class VerificationBot(commands.Bot):
         res = await channel.send(embed=embed, view=VerifyButton(), silent=True)
         
         # Handle previous message cleanup
-        last_initial_message = self.redis.get(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message")
+        last_initial_message = self.redis.redis.get(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message")
         if last_initial_message:
             last_initial_message = int(last_initial_message)
             try:
@@ -79,7 +67,7 @@ class VerificationBot(commands.Bot):
             except discord.NotFound:
                 print(f"Initial message {last_initial_message} not found")
                 pass
-        self.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
+        self.redis.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
     @tasks.loop(seconds=Config.CHECK_INTERVAL)
     async def check_addresses(self):
