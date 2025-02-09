@@ -38,6 +38,7 @@ class BaseRoleManager(ABC):
         """Verify if user is still a holder"""
         address = await self.get_address(user_id)
         if not address:
+            print(f"Could not find {self.address_key} address for user {user_id}")
             return False
             
         async with self.bot.session.get(f"{self.verification_url}/{address}") as response:
