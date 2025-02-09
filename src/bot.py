@@ -34,7 +34,7 @@ class VerificationBot(commands.Bot):
         if guild is None:
             print(f"Could not find guild with ID {Config.TARGET_GUILD_ID}")
         try:
-            return await self.guild.fetch_member(user_id)
+            return await guild.fetch_member(user_id)
         except discord.NotFound:
             print(f"Member {user_id} not found in guild")
             return None
