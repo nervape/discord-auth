@@ -11,7 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the source code and setup.py
 COPY src/ ./src/
-COPY setup.py .
 COPY main.py .
 
 # Install the package
