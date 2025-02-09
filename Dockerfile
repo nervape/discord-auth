@@ -13,9 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY main.py .
 
-# Install the package
-RUN pip install -e .
-
 # Runtime stage
 FROM python:3.9-slim
 
