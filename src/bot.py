@@ -101,6 +101,12 @@ class VerificationBot(commands.Bot):
                 verified_users = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
                 logger.info(f"Checking {len(verified_users)} verified users...")
                 
+                # Extract user IDs from Redis keys
+                verified_user_ids = set(
+                    key.decode('utf-8').split(':')[3]  # Get ID part from {prefix}:discord:user:{id}:verified
+                    for key in verified_users
+                )
+                
                 # Process each verified user
                 for user_key in verified_users:
                     logger.info(f"Processing user {user_key}")
@@ -122,9 +128,9 @@ class VerificationBot(commands.Bot):
                     logger.info(f"Checking {len(members)} role members...")
                     for member in members:
                         try:
-                            # Skip if already checked in verified users
+                            # Skip if already checked in verified users using extracted IDs
                             logger.info(f"Checking role member {member.id}")
-                            if any(str(member.id).encode() in key for key in verified_users):
+                            if str(member.id) in verified_user_ids:
                                 continue
                                 
                             user_key = f"{Config.REDIS_KEY_PREFIX}:discord:user:{member.id}".encode()
