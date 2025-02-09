@@ -51,8 +51,10 @@ class BaseRoleManager(ABC):
         member = await self.bot.get_guild_member(int(user_id))
         if not member:
             return
+        
+        guild = self.get_guild(Config.TARGET_GUILD_ID)
 
-        role = self.bot.get_guild().get_role(self.role_id)
+        role = guild.get_role(self.role_id)
         if not role:
             print(f"Could not find role with ID {self.role_id}")
             return
