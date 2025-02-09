@@ -9,7 +9,7 @@ from .redis_manager import RedisManager
 from .role_managers import NervapeCKBRoleManager, NervapeBTCManager
 
 # Get Discord's logger
-logger = logging.getLogger('discord')
+logger = logging.getLogger('discord.client')
 
 class VerificationBot(commands.Bot):
     def __init__(self):
