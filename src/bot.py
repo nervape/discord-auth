@@ -71,25 +71,24 @@ class VerificationBot(commands.Bot):
 
     @tasks.loop(seconds=Config.CHECK_INTERVAL)
     async def check_addresses(self):
-        await self._ready.wait()  # Wait until bot is ready
-        
-        try:
-            verified_users = await self.redis.get_verified_users()
-            print(f"Checking {len(verified_users)} verified users...")
-            
-            for user_id in verified_users:
-                member = await self.get_guild_member(int(user_id))
-                if not member:
-                    continue
-                    
-                for manager in self.role_managers:
-                    try:
-                        await manager.update_role(user_id)
-                    except Exception as e:
-                        print(f"Error checking {manager.address_key} role for user {user_id}: {e}")
+        while not self.is_closed():
+            try:
+                verified_users = await self.redis.get_verified_users()
+                print(f"Checking {len(verified_users)} verified users...")
+                
+                for user_id in verified_users:
+                    member = await self.get_guild_member(int(user_id))
+                    if not member:
+                        continue
+                        
+                    for manager in self.role_managers:
+                        try:
+                            await manager.update_role(user_id)
+                        except Exception as e:
+                            print(f"Error checking {manager.address_key} role for user {user_id}: {e}")
 
-        except Exception as e:
-            print(f"Error in address check: {e}")
+            except Exception as e:
+                print(f"Error in address check: {e}")
 
     async def close(self):
         if self.session:
