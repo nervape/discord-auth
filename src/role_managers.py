@@ -68,6 +68,8 @@ class BaseRoleManager(ABC):
         elif not is_holder and role in member.roles:
             print(f"User {user_id} is no longer a {self.address_key} holder, removing role")
             await member.remove_roles(role)
+        elif is_holder and role in member.roles:
+            print(f"User {user_id} is still a verified {self.address_key} holder")
 
 class NervapeCKBRoleManager(BaseRoleManager):
     @property
