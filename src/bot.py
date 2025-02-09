@@ -8,9 +8,6 @@ from .views import VerifyButton
 from .redis_manager import RedisManager
 from .role_managers import NervapeCKBRoleManager, NervapeBTCManager
 
-# Get Discord's logger
-logger = logging.getLogger('discord.client')
-
 class VerificationBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -36,14 +33,14 @@ class VerificationBot(commands.Bot):
         """Safe method to get guild member"""
         guild = self.get_guild(Config.TARGET_GUILD_ID)
         if guild is None:
-            logger.error(f"Could not find guild with ID {Config.TARGET_GUILD_ID}")
+            print(f"Could not find guild with ID {Config.TARGET_GUILD_ID}")
         try:
             return await guild.fetch_member(user_id)
         except discord.NotFound:
-            logger.warning(f"Member {user_id} not found in guild")
+            print(f"Member {user_id} not found in guild")
             return None
         except Exception as e:
-            logger.error(f"Error fetching member {user_id}: {e}")
+            print(f"Error fetching member {user_id}: {e}")
             return None
 
     @tasks.loop(count=1)
@@ -109,18 +106,18 @@ class VerificationBot(commands.Bot):
 
                 guild = self.get_guild(Config.TARGET_GUILD_ID)
                 if not guild:
-                    logger.error("Guild not found, skipping role member check")
+                    print("Guild not found, skipping role member check")
                     continue
-                
+
                 # Process each verified user
                 for user_key in verified_users:
-                    logger.info(f"Processing user {user_key}")
+                    print(f"Processing user {user_key}")
                     try:
                         user_id = user_key.decode('utf-8').split(':')[3]
                         member = await self.get_guild_member(user_id)
                         await self.verify_all_roles(guild ,member)
                     except Exception as e:
-                        logger.error(f"Error processing user {user_key}: {e}")
+                        print(f"Error processing user {user_key}: {e}")
                         continue
 
                 # 2. Check role members
@@ -128,22 +125,22 @@ class VerificationBot(commands.Bot):
                 role = guild.get_role(Config.VERIFIED_ROLE_ID)
                 if role:
                     members = role.members
-                    logger.info(f"Checking {len(members)} role members...")
+                    print(f"Checking {len(members)} role members...")
                     for member in members:
                         try:
                             # Skip if already checked in verified users using extracted IDs
-                            logger.info(f"Checking role member {member.id}")
+                            print(f"Checking role member {member.id}")
                             if str(member.id) in verified_user_ids:
                                 continue
                                 
                             user_key = f"{Config.REDIS_KEY_PREFIX}:discord:user:{member.id}".encode()
                             await self.verify_all_roles(guild, member)
                         except Exception as e:
-                            logger.error(f"Error checking role member {member}: {e}")
+                            print(f"Error checking role member {member}: {e}")
                             continue
 
             except Exception as e:
-                logger.error(f"Error in address check: {e}")
+                print(f"Error in address check: {e}")
 
     async def close(self):
         if self.session:
