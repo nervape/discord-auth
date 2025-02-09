@@ -93,3 +93,7 @@ class VerificationBot(commands.Bot):
         if self.session:
             await self.session.close()
         await super().close()
+
+
+    async def get_guild(self):
+        return self.get_guild(Config.TARGET_GUILD_ID)
