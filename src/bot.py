@@ -68,28 +68,68 @@ class VerificationBot(commands.Bot):
                 pass
         self.redis.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
+    async def verify_role_holder(self, user_key: str, manager) -> bool:
+        """Verify holder status for a specific chain"""
+        try:
+            user_id = user_key.decode('utf-8').split(':')[3]
+            return await manager.update_role(user_id)
+        except Exception as e:
+            print(f"Error verifying {manager.address_key} for user {user_key}: {e}")
+            return False
+
+    async def verify_all_roles(self, user_key: str) -> bool:
+        """Verify holder status for all chains in order"""
+        try:
+            for manager in self.role_managers:
+                if not await self.verify_role_holder(user_key, manager):
+                    return False
+            return True
+        except Exception as e:
+            print(f"Error verifying chains for user {user_key}: {e}")
+            return False
+
     @tasks.loop(seconds=Config.CHECK_INTERVAL)
     async def check_addresses(self):
+        """Check verified addresses against API"""
         while not self.is_closed():
             try:
-                verified_users = await self.redis.get_verified_users()
+                # 1. Get verified users from Redis directly
+                verified_users = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
                 print(f"Checking {len(verified_users)} verified users...")
                 
-                for user_id in verified_users:
-                    print(f"Checking user {user_id}")
-                    member = await self.get_guild_member(int(user_id))
-                    if not member:
-                        print(f"Could not find member with ID {user_id}, skipping...")
+                # Process each verified user
+                for user_key in verified_users:
+                    try:
+                        await self.verify_all_roles(user_key)
+                    except Exception as e:
+                        print(f"Error processing user {user_key}: {e}")
                         continue
-                        
-                    for manager in self.role_managers:
+
+                # 2. Check role members
+                guild = self.get_guild(Config.TARGET_GUILD_ID)
+                if not guild:
+                    print("Guild not found, skipping role member check")
+                    continue
+                    
+                role = guild.get_role(Config.VERIFIED_ROLE_ID)
+                if role:
+                    members = role.members
+                    print(f"Checking {len(members)} role members...")
+                    for member in members:
                         try:
-                            await manager.update_role(user_id)
+                            # Skip if already checked in verified users
+                            if any(str(member.id).encode() in key for key in verified_users):
+                                continue
+                                
+                            user_key = f"{Config.REDIS_KEY_PREFIX}:discord:user:{member.id}".encode()
+                            await self.verify_all_roles(user_key)
                         except Exception as e:
-                            print(f"Error checking {manager.address_key} role for user {user_id}: {e}")
+                            print(f"Error checking role member {member}: {e}")
+                            continue
 
             except Exception as e:
                 print(f"Error in address check: {e}")
+            await asyncio.sleep(Config.CHECK_INTERVAL)
 
     async def close(self):
         if self.session:
