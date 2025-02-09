@@ -110,7 +110,9 @@ class VerificationBot(commands.Bot):
                 for user_key in verified_users:
                     logger.info(f"Processing user {user_key}")
                     try:
-                        await self.verify_all_roles(user_key)
+                        user_id = user_key.decode('utf-8').split(':')[3]
+                        member = await self.get_guild_member(user_id)
+                        await self.verify_all_roles(guild ,member)
                     except Exception as e:
                         logger.error(f"Error processing user {user_key}: {e}")
                         continue
