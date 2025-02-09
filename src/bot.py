@@ -72,20 +72,20 @@ class VerificationBot(commands.Bot):
                 pass
         self.redis.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
-    async def verify_role_holder(self, user_key: str, manager) -> bool:
+    async def verify_role_holder(self, guild, user_key: str, manager) -> bool:
         """Verify holder status for a specific chain"""
         try:
             user_id = user_key.decode('utf-8').split(':')[3]
-            return await manager.update_role(user_id)
+            return await manager.update_role(guild, user_id)
         except Exception as e:
             logger.error(f"Error verifying {manager.address_key} for user {user_key}: {e}")
             return False
 
-    async def verify_all_roles(self, user_key: str) -> bool:
+    async def verify_all_roles(self, guild, user_key: str) -> bool:
         """Verify holder status for all chains in order"""
         try:
             for manager in self.role_managers:
-                if not await self.verify_role_holder(user_key, manager):
+                if not await self.verify_role_holder(guild, user_key, manager):
                     return False
             return True
         except Exception as e:
@@ -134,7 +134,7 @@ class VerificationBot(commands.Bot):
                                 continue
                                 
                             user_key = f"{Config.REDIS_KEY_PREFIX}:discord:user:{member.id}".encode()
-                            await self.verify_all_roles(user_key)
+                            await self.verify_all_roles(guild, user_key)
                         except Exception as e:
                             logger.error(f"Error checking role member {member}: {e}")
                             continue
