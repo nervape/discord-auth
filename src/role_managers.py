@@ -52,7 +52,7 @@ class BaseRoleManager(ABC):
         if not member:
             return
         
-        guild = self.get_guild(Config.TARGET_GUILD_ID)
+        guild = self.bot.get_guild(Config.TARGET_GUILD_ID)
 
         role = guild.get_role(self.role_id)
         if not role:
