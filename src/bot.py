@@ -69,10 +69,10 @@ class VerificationBot(commands.Bot):
                 pass
         self.redis.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
-    async def verify_role_holder(self, guild, user, manager) -> bool:
+    async def verify_role_holder(self, guild, role, user, manager) -> bool:
         """Verify holder status for a specific chain"""
         try:
-            return await manager.update_role(guild, user)
+            return await manager.update_role(guild, role, user)
         except Exception as e:
             print(f"Error verifying {manager.address_key} for user {user}: {e}")
             return False
@@ -81,7 +81,8 @@ class VerificationBot(commands.Bot):
         """Verify holder status for all chains in order"""
         try:
             for manager in self.role_managers:
-                if not await self.verify_role_holder(guild, user, manager):
+                role = guild.get_role(manager.role_id)
+                if not await self.verify_role_holder(guild, role, user, manager):
                     return False
             return True
         except Exception as e:
