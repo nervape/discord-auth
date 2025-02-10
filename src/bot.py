@@ -95,19 +95,10 @@ class VerificationBot(commands.Bot):
             print(f"Error verifying {manager.address_key} for user {user}: {e}")
             return False
 
-    async def verify_all_roles(self, guild, user) -> bool:
+    async def verify_all_roles(self, user) -> bool:
         """Verify holder status for all chains in order"""
         try:
             for manager in self.role_managers:
-                if not manager.cached_role:
-                    print(f"No cached role for {manager.address_key} manager")
-                    # adding cached role for the manager
-                    role = guild.get_role(manager.role_id)
-                    if role:
-                        manager.cached_role = role
-                    else:
-                        print(f"Could not find role with ID {manager.role_id} for {manager.address_key} manager")
-                        continue
                 if not await self.verify_role_holder(user, manager):
                     return False
             return True
@@ -115,50 +106,51 @@ class VerificationBot(commands.Bot):
             print(f"Error verifying chains for user {user}: {e}")
             return False
 
-    async def process_holder_batch(self, members, guild):
-        """Process a batch of members in parallel"""
-        tasks = [
-            self.verify_all_roles(guild, member)
-            for member in members
-            if member is not None
-        ]
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
-
     @tasks.loop(seconds=Config.CHECK_INTERVAL)
     async def check_addresses(self):
         """Check verified addresses against API"""
         try:
+            # Get verified users from Redis
+            verified_keys = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
+            verified_user_ids = {int(key.decode('utf-8').split(':')[3]) for key in verified_keys}
+            print(f"Found {len(verified_user_ids)} verified users")
+
             # Get guild once
             guild = self.get_guild(Config.TARGET_GUILD_ID)
             if not guild:
                 print("Guild not found, skipping check")
                 return
 
-            # Get verified users from Redis in one call
-            verified_keys = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
-            verified_user_ids = {key.decode('utf-8').split(':')[3] for key in verified_keys}
-            print(f"Found {len(verified_user_ids)} verified users")
+            # Initialize roles if not cached
+            for manager in self.role_managers:
+                if not manager.cached_role:
+                    role = guild.get_role(manager.role_id)
+                    if role:
+                        manager.cached_role = role
+                        print(f"Cached role {role.name} for {manager.address_key} manager")
+                    else:
+                        print(f"Could not find role with ID {manager.role_id} for {manager.address_key} manager")
 
-            # Process verified users in batches
-            verified_members = []
-            for user_id in verified_user_ids:
-                try:
-                    member = await guild.fetch_member(int(user_id))
-                    if member:
-                        verified_members.append(member)
-                except discord.NotFound:
-                    continue
-                except Exception as e:
-                    print(f"Error fetching member {user_id}: {e}")
-            
-            # Process all members in batches
-            all_members = verified_members
-            BATCH_SIZE = 10
-            for i in range(0, len(all_members), BATCH_SIZE):
-                batch = all_members[i:i + BATCH_SIZE]
-                await self.process_holder_batch(batch, guild)
-                
+            # Fetch all members at once
+            try:
+                members = {}
+                async for member in guild.fetch_members():
+                    if member.id in verified_user_ids:
+                        members[member.id] = member
+
+                print(f"Fetched {len(members)} verified members from guild")
+
+                # Process verified members
+                for user_id in verified_user_ids:
+                    if member := members.get(user_id):
+                        print(f"Processing verified user {user_id}")
+                        await self.verify_all_roles(member)
+                    else:
+                        print(f"Member {user_id} not found in guild")
+
+            except Exception as e:
+                print(f"Error fetching members: {e}")
+
         except Exception as e:
             print(f"Error in address check: {e}")
 
