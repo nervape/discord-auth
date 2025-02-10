@@ -65,7 +65,7 @@ class VerificationBot(commands.Bot):
                 message = await channel.fetch_message(last_initial_message)
                 await message.delete()
             except discord.NotFound:
-                logger.info(f"Initial message {last_initial_message} not found")
+                print(f"Initial message {last_initial_message} not found")
                 pass
         self.redis.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
@@ -74,7 +74,7 @@ class VerificationBot(commands.Bot):
         try:
             return await manager.update_role(guild, user)
         except Exception as e:
-            logger.error(f"Error verifying {manager.address_key} for user {user}: {e}")
+            print(f"Error verifying {manager.address_key} for user {user}: {e}")
             return False
 
     async def verify_all_roles(self, guild, user) -> bool:
@@ -85,7 +85,7 @@ class VerificationBot(commands.Bot):
                     return False
             return True
         except Exception as e:
-            logger.error(f"Error verifying chains for user {user}: {e}")
+            print(f"Error verifying chains for user {user}: {e}")
             return False
 
     @tasks.loop(seconds=Config.CHECK_INTERVAL)
@@ -95,7 +95,7 @@ class VerificationBot(commands.Bot):
             try:
                 # 1. Get verified users from Redis directly
                 verified_users = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
-                logger.info(f"Checking {len(verified_users)} verified users...")
+                print(f"Checking {len(verified_users)} verified users...")
                 
                 # Extract user IDs from Redis keys
                 verified_user_ids = set(
