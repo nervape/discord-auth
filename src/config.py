@@ -15,8 +15,6 @@ class Config:
     CKB_TARGET_URL = os.getenv('CKB_TARGET_URL')   # API endpoint for CKB holder verification
     BTC_TARGET_URL = os.getenv('BTC_TARGET_URL')  # API endpoint for BTC holder verification
     
-    # Discord role configuration
-    VERIFIED_ROLE_ID = int(os.getenv('VERIFIED_ROLE_ID'))  # Base role ID for verified users
     CKB_ROLE_ID = int(os.getenv('CKB_ROLE_ID'))           # Role ID for CKB holders
     BTC_ROLE_ID = int(os.getenv('BTC_ROLE_ID'))           # Role ID for BTC holders
     
