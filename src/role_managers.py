@@ -56,13 +56,14 @@ class BaseRoleManager(ABC):
                 return data.get('isHolder', False)
         return False
 
-    async def update_role(self, guild, role, member):
+    async def update_role(self, member):
         """Update user's role based on holder status"""
         if not member:
             print(f"Could not find member with ID {member}, skipping...")
             return
         
         user_id = member.id
+        role = self.cached_role
 
         if not role:
             print(f"Could not find role with ID {self.role_id}")

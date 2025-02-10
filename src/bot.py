@@ -46,11 +46,6 @@ class VerificationBot(commands.Bot):
             else:
                 print(f"Could not find role with ID {manager.role_id} for {manager.address_key} manager")
 
-    @init_roles.before_loop
-    async def before_init_roles(self):
-        """Wait until bot is ready before initializing roles"""
-        await self.wait_until_ready()
-
     async def get_guild_member(self, user_id: int):
         """Safe method to get guild member"""
         guild = self.get_guild(Config.TARGET_GUILD_ID)
