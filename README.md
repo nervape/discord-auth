@@ -1,4 +1,4 @@
-# Discord NFT Holder Verification Bot
+# Discord Asset Holder Verification Bot
 
 [简体中文说明](README.zh-CN.md)
 
