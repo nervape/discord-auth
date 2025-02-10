@@ -28,7 +28,6 @@ class VerificationBot(commands.Bot):
             NervapeCKBRoleManager(self, self.redis),
             NervapeBTCManager(self, self.redis)
         ]
-        self.init_roles.start()  # Start initialization task
 
     @tasks.loop(count=1)
     async def init_roles(self):
