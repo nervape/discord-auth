@@ -13,7 +13,7 @@
 
 1. 克隆仓库：
 ```bash
-git clone https://github.com/yourusername/discord-auth.git
+git clone https://github.com/nervape/discord-auth.git
 cd discord-auth
 ```
 
