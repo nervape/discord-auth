@@ -58,25 +58,26 @@ class BaseRoleManager(ABC):
 
     async def update_role(self, member):
         """Update user's role based on holder status"""
-        if not member:
-            print(f"Could not find member with ID {member}, skipping...")
-            return
-        
-        user_id = member.id
-        role = self.cached_role
+        if not member or not self.cached_role:
+            return False
 
-        if not role:
-            print(f"Could not find role with ID {self.role_id}")
-            return
+        try:
+            user_id = member.id
+            is_holder = await self.verify_holder(user_id)
+            has_role = self.cached_role in member.roles
 
-        is_holder = await self.verify_holder(user_id)
-
-        if is_holder and role not in member.roles:
-            print(f"User {user_id} is a new verified {self.address_key} holder, adding role")
-            await member.add_roles(role)
-        elif not is_holder and role in member.roles:
-            print(f"User {user_id} is no longer a {self.address_key} holder, removing role")
-            await member.remove_roles(role)
+            if is_holder and not has_role:
+                await member.add_roles(self.cached_role)
+                print(f"Added {self.address_key} role to user {user_id}")
+                return True
+            elif not is_holder and has_role:
+                await member.remove_roles(self.cached_role)
+                print(f"Removed {self.address_key} role from user {user_id}")
+                return True
+            return is_holder
+        except Exception as e:
+            print(f"Error updating {self.address_key} role for user {member.id}: {e}")
+            return False
 
 class NervapeCKBRoleManager(BaseRoleManager):
     @property

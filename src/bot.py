@@ -114,60 +114,52 @@ class VerificationBot(commands.Bot):
             print(f"Error verifying chains for user {user}: {e}")
             return False
 
+    async def process_holder_batch(self, members, guild):
+        """Process a batch of members in parallel"""
+        tasks = [
+            self.verify_all_roles(guild, member)
+            for member in members
+            if member is not None
+        ]
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
     @tasks.loop(seconds=Config.CHECK_INTERVAL)
     async def check_addresses(self):
         """Check verified addresses against API"""
-        while not self.is_closed():
-            try:
-                # 1. Get verified users from Redis directly
-                verified_users = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
-                print(f"Checking {len(verified_users)} verified users...")
-                
-                # Extract user IDs from Redis keys
-                verified_user_ids = set(
-                    key.decode('utf-8').split(':')[3]  # Get ID part from {prefix}:discord:user:{id}:verified
-                    for key in verified_users
-                )
-                
+        try:
+            # Get guild once
+            guild = self.get_guild(Config.TARGET_GUILD_ID)
+            if not guild:
+                print("Guild not found, skipping check")
+                return
 
-                guild = self.get_guild(Config.TARGET_GUILD_ID)
-                if not guild:
-                    print("Guild not found, skipping role member check")
+            # Get verified users from Redis in one call
+            verified_keys = self.redis.redis.keys(f"{Config.REDIS_KEY_PREFIX}:discord:user:*:verified")
+            verified_user_ids = {key.decode('utf-8').split(':')[3] for key in verified_keys}
+            print(f"Found {len(verified_user_ids)} verified users")
+
+            # Process verified users in batches
+            verified_members = []
+            for user_id in verified_user_ids:
+                try:
+                    member = await guild.fetch_member(int(user_id))
+                    if member:
+                        verified_members.append(member)
+                except discord.NotFound:
                     continue
-
-                # Process each verified user
-                for user_key in verified_users:
-                    print(f"Processing user {user_key}")
-                    try:
-                        user_id = user_key.decode('utf-8').split(':')[3]
-                        member = await self.get_guild_member(user_id)
-                        if member:
-                            await self.verify_all_roles(guild ,member)
-                    except Exception as e:
-                        print(f"Error processing user {user_key}: {e}")
-                        continue
-
-                # 2. Check role members
-                    
-                role = guild.get_role(Config.VERIFIED_ROLE_ID)
-                if role:
-                    members = role.members
-                    print(f"Checking {len(members)} role members...")
-                    for member in members:
-                        try:
-                            # Skip if already checked in verified users using extracted IDs
-                            print(f"Checking role member {member.id}")
-                            if str(member.id) in verified_user_ids:
-                                continue
-                                
-                            user_key = f"{Config.REDIS_KEY_PREFIX}:discord:user:{member.id}".encode()
-                            await self.verify_all_roles(guild, member)
-                        except Exception as e:
-                            print(f"Error checking role member {member}: {e}")
-                            continue
-
-            except Exception as e:
-                print(f"Error in address check: {e}")
+                except Exception as e:
+                    print(f"Error fetching member {user_id}: {e}")
+            
+            # Process all members in batches
+            all_members = verified_members
+            BATCH_SIZE = 10
+            for i in range(0, len(all_members), BATCH_SIZE):
+                batch = all_members[i:i + BATCH_SIZE]
+                await self.process_holder_batch(batch, guild)
+                
+        except Exception as e:
+            print(f"Error in address check: {e}")
 
     async def close(self):
         if self.session:
