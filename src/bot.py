@@ -28,6 +28,29 @@ class VerificationBot(commands.Bot):
             NervapeCKBRoleManager(self, self.redis),
             NervapeBTCManager(self, self.redis)
         ]
+        self.init_roles.start()  # Start initialization task
+
+    @tasks.loop(count=1)
+    async def init_roles(self):
+        """Initialize and cache roles for each manager"""
+        print("Initializing role cache...")
+        guild = self.get_guild(Config.TARGET_GUILD_ID)
+        if not guild:
+            print(f"Could not find guild with ID {Config.TARGET_GUILD_ID}")
+            return
+
+        for manager in self.role_managers:
+            role = guild.get_role(manager.role_id)
+            if role:
+                manager.cached_role = role
+                print(f"Cached role {role.name} for {manager.address_key} manager")
+            else:
+                print(f"Could not find role with ID {manager.role_id} for {manager.address_key} manager")
+
+    @init_roles.before_loop
+    async def before_init_roles(self):
+        """Wait until bot is ready before initializing roles"""
+        await self.wait_until_ready()
 
     async def get_guild_member(self, user_id: int):
         """Safe method to get guild member"""
@@ -69,10 +92,10 @@ class VerificationBot(commands.Bot):
                 pass
         self.redis.redis.set(f"{Config.REDIS_KEY_PREFIX}:discord:last_initial_message", res.id)
 
-    async def verify_role_holder(self, guild, role, user, manager) -> bool:
+    async def verify_role_holder(self, guild, user, manager) -> bool:
         """Verify holder status for a specific chain"""
         try:
-            return await manager.update_role(guild, role, user)
+            return await manager.update_role(guild, user)
         except Exception as e:
             print(f"Error verifying {manager.address_key} for user {user}: {e}")
             return False
@@ -81,8 +104,16 @@ class VerificationBot(commands.Bot):
         """Verify holder status for all chains in order"""
         try:
             for manager in self.role_managers:
-                role = guild.get_role(manager.role_id)
-                if not await self.verify_role_holder(guild, role, user, manager):
+                if not manager.cached_role:
+                    print(f"No cached role for {manager.address_key} manager")
+                    # adding cached role for the manager
+                    role = guild.get_role(manager.role_id)
+                    if role:
+                        manager.cached_role = role
+                    else:
+                        print(f"Could not find role with ID {manager.role_id} for {manager.address_key} manager")
+                        continue
+                if not await self.verify_role_holder(guild, user, manager):
                     return False
             return True
         except Exception as e:
@@ -116,7 +147,8 @@ class VerificationBot(commands.Bot):
                     try:
                         user_id = user_key.decode('utf-8').split(':')[3]
                         member = await self.get_guild_member(user_id)
-                        await self.verify_all_roles(guild ,member)
+                        if member:
+                            await self.verify_all_roles(guild ,member)
                     except Exception as e:
                         print(f"Error processing user {user_key}: {e}")
                         continue

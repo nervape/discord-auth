@@ -6,6 +6,7 @@ class BaseRoleManager(ABC):
     def __init__(self, bot, redis_manager):
         self.bot = bot
         self.redis = redis_manager
+        self._cached_role = None  # Add role cache
         
     @property
     @abstractmethod
@@ -23,6 +24,14 @@ class BaseRoleManager(ABC):
     def verification_url(self) -> str:
         """URL to verify holder status"""
         pass
+
+    @property
+    def cached_role(self):
+        return self._cached_role
+        
+    @cached_role.setter
+    def cached_role(self, role):
+        self._cached_role = role
 
     async def get_address(self, user_id: int) -> str:
         """Get user's address from Redis"""

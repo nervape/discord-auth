@@ -17,6 +17,7 @@ def main():
         logger.info(f"Bot logged in as {bot.user}")
         bot.send_initial_message.start()
         bot.check_addresses.start()
+        bot.init_roles.start()
 
     @bot.tree.command(name="verify", description="Start the verification process")
     async def verify_command(interaction):
