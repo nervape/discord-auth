@@ -89,6 +89,7 @@ class VerificationBot(commands.Bot):
     async def verify_role_holder(self, user, manager) -> bool:
         """Verify holder status for a specific chain"""
         try:
+            print(f"Verifying {manager.address_key} for user {user}")
             return await manager.update_role(user)
         except Exception as e:
             print(f"Error verifying {manager.address_key} for user {user}: {e}")
