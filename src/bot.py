@@ -100,7 +100,7 @@ class VerificationBot(commands.Bot):
         try:
             for manager in self.role_managers:
                 if not await self.verify_role_holder(user, manager):
-                    return False
+                    continue
             return True
         except Exception as e:
             print(f"Error verifying chains for user {user}: {e}")
