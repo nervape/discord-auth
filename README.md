@@ -77,6 +77,32 @@ Endpoint requirements:
 
 ## Usage
 
+### Quick Setup Guide
+
+1. Create Discord Application:
+   - Visit [Discord Developer Portal](https://discord.com/developers/applications)
+   - Create New Application -> Bot -> Copy Token
+   - Enable Privileged Intents (Messages, Server Members, Presence)
+   
+2. Invite Bot:
+   ```
+   https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=268435456&scope=bot%20applications.commands
+   ```
+
+3. Configure Environment:
+   - Copy `.env.example` to `.env`
+   - Set `DISCORD_BOT_TOKEN` from step 1
+   - Set `TARGET_GUILD_ID` (Right click server -> Copy ID)
+   - Set `TARGET_CHANNEL_ID` (Right click channel -> Copy ID)
+   - Set role IDs (Server Settings -> Roles -> Copy ID)
+
+Resources:
+- [Discord.py Documentation](https://discordpy.readthedocs.io/)
+- [Discord Developer Docs](https://discord.com/developers/docs)
+- [Bot Permissions Calculator](https://discordapi.com/permissions.html)
+
+For detailed setup instructions, see Basic Setup section below.
+
 ### Basic Setup
 
 1. Create a Discord Application and Bot:
