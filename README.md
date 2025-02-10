@@ -15,7 +15,7 @@ A modular Discord bot built with Python for automated NFT holder verification an
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/discord-auth.git
+git clone https://github.com/nervape/discord-auth.git
 cd discord-auth
 ```
 
