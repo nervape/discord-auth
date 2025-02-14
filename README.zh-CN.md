@@ -40,6 +40,11 @@ TARGET_GUILD_ID=123456789
 TARGET_CHANNEL_ID=123456789
 ```
 
+## 开箱即用API服务
+
+你可以部署一份 https://github.com/nervape/rgbpp-query 来提供数据源；或者你也可以参考下面的接口范式来自己实现一个
+
+
 ## API 集成规范
 
 验证 API 端点必须实现以下接口：

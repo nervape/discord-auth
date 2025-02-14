@@ -42,6 +42,11 @@ TARGET_GUILD_ID=123456789
 TARGET_CHANNEL_ID=123456789
 ```
 
+## Ready-to-use API service
+
+You can deploy a copy of https://github.com/nervape/rgbpp-query to have a quick access. Or implement your own one following the specification below
+
+
 ## API Integration Specification
 
 Your verification API endpoints must implement the following interface:
